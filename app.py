@@ -29,7 +29,8 @@ import sys
 
 subprocess.check_call([sys.executable, "-m", "pip", "install", "kaggle"])
 
-!kaggle datasets download -d clmentbisaillon/fake-and-real-news-dataset
+fake = pd.read_csv("data/Fake.csv")
+true = pd.read_csv("data/True.csv")
 
 # 🔹 Étape 3 : Extraire le dataset ZIP
 with zipfile.ZipFile("fake-and-real-news-dataset.zip", "r") as zip_ref:
