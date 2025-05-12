@@ -9,6 +9,7 @@ from langdetect import detect
 import nltk
 from nltk.tokenize import word_tokenize, sent_tokenize
 
+# Download NLTK resources if not already downloaded
 nltk.download('punkt')
 
 # ------------------------------
@@ -120,3 +121,4 @@ if user_input:
 # Footer
 st.markdown("---")
 st.caption("© 2025 - AI Fake News Detection Project | Made with ❤️ using Streamlit and TensorFlow")
+
