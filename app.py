@@ -41,12 +41,12 @@ def clean_text(text):
     return text.lower()
 
 def summarize_text(text):
-    """Returns text statistics such as word and sentence counts."""
-    nltk.download('punkt', quiet=True)
-    from nltk.tokenize import word_tokenize, sent_tokenize
+    """Returns word and sentence counts. Handles tokenization errors gracefully."""
     try:
-        words = word_tokenize(text)
-        sentences = sent_tokenize(text, language='english')  # Force English language
+        nltk.download('punkt', quiet=True)
+        from nltk.tokenize import word_tokenize, sent_tokenize
+        words = word_tokenize(text, language='english')  # force English
+        sentences = sent_tokenize(text, language='english')  # force English
         return {
             "Word Count": len(words),
             "Sentence Count": len(sentences),
@@ -57,7 +57,7 @@ def summarize_text(text):
             "Word Count": 0,
             "Sentence Count": 0,
             "Character Count": len(text),
-            "Error": str(e)
+            "Error": f"Tokenizer error: {str(e)}"
         }
 
 def predict_label(text):
