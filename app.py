@@ -1,130 +1,54 @@
-# 🔹 Importation des bibliothèques
-import os
-import json
-import zipfile
-import pandas as pd
-import numpy as np
-import matplotlib.pyplot as plt
-import seaborn as sns
-
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import classification_report, confusion_matrix
-
+import streamlit as st
 import tensorflow as tf
-from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Embedding, LSTM, Dense, Dropout, Bidirectional
-from tensorflow.keras.preprocessing.text import Tokenizer
+import numpy as np
+import pickle
 from tensorflow.keras.preprocessing.sequence import pad_sequences
+from PIL import Image
 
-# 🔹 Étape 1 : Définir les identifiants API Kaggle
-kaggle_json_path = "kaggle.json"  # Assurez-vous que ce fichier est chargé dans Colab
-with open(kaggle_json_path, "r") as f:
-    kaggle_creds = json.load(f)
-os.environ["KAGGLE_USERNAME"] = kaggle_creds["username"]
-os.environ["KAGGLE_KEY"] = kaggle_creds["key"]
+# Chargement du modèle et du tokenizer
+@st.cache_resource
+def load_model_and_tokenizer():
+    model = tf.keras.models.load_model("news_classifier_model.h5")
+    with open("tokenizer.pkl", "rb") as f:
+        tokenizer = pickle.load(f)
+    return model, tokenizer
 
-# 🔹 Étape 2 : Installer l'outil Kaggle CLI et télécharger le dataset
-import subprocess
-import sys
+model, tokenizer = load_model_and_tokenizer()
 
-subprocess.check_call([sys.executable, "-m", "pip", "install", "kaggle"])
-
-fake = pd.read_csv("data/Fake.csv")
-true = pd.read_csv("data/True.csv")
-
-# 🔹 Étape 3 : Extraire le dataset ZIP
-with zipfile.ZipFile("fake-and-real-news-dataset.zip", "r") as zip_ref:
-    zip_ref.extractall(".")
-
-# 🔹 Étape 4 : Charger et étiqueter les données
-fake = pd.read_csv("Fake.csv")
-true = pd.read_csv("True.csv")
-fake["label"] = 0
-true["label"] = 1
-
-data = pd.concat([fake, true], axis=0)
-data = data.sample(frac=1).reset_index(drop=True)
-
-texts = data["text"].astype(str).values
-labels = data["label"].values
-
-# 🔹 Étape 5 : Prétraitement des données
+# Paramètres
 vocab_size = 10000
 max_length = 300
 
-tokenizer = Tokenizer(num_words=vocab_size, oov_token="<OOV>")
-tokenizer.fit_on_texts(texts)
+# Interface Streamlit
+st.set_page_config(page_title="📰 Fake News Detector", page_icon="🧠", layout="wide")
+st.title("📰 Fake News Detector - AI Powered")
+st.markdown("""
+Bienvenue dans l'application de détection automatique des **fake news** 🧠📢.  
+Entrez un article ci-dessous et l'IA vous dira s'il est **Vrai** ou **Faux**.
+""")
 
-sequences = tokenizer.texts_to_sequences(texts)
-padded = pad_sequences(sequences, maxlen=max_length, padding='post', truncating='post')
+st.sidebar.header("⚙️ Paramètres")
+confidence_display = st.sidebar.checkbox("Afficher la confiance du modèle", True)
 
-X_train, X_test, y_train, y_test = train_test_split(padded, labels, test_size=0.2, random_state=42)
+# Champ de saisie
+user_input = st.text_area("✍️ Entrez le contenu de la news :", height=300)
 
-# 🔹 Étape 6 : Construire le modèle
-model = Sequential([
-    Embedding(vocab_size, 64, input_length=max_length),
-    Bidirectional(LSTM(64, return_sequences=True)),
-    Dropout(0.5),
-    Bidirectional(LSTM(32)),
-    Dense(32, activation='relu'),
-    Dropout(0.5),
-    Dense(1, activation='sigmoid')
-])
+if st.button("🔍 Analyser la News"):
+    if not user_input.strip():
+        st.warning("❗ Veuillez entrer un texte avant d'analyser.")
+    else:
+        sequence = tokenizer.texts_to_sequences([user_input])
+        padded = pad_sequences(sequence, maxlen=max_length, padding='post', truncating='post')
+        prediction = model.predict(padded)[0][0]
 
-model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
-model.summary()
+        label = "✅ Vraie News" if prediction > 0.5 else "❌ Fake News"
+        color = "green" if prediction > 0.5 else "red"
+        st.markdown(f"<h3 style='color:{color};text-align:center'>{label}</h3>", unsafe_allow_html=True)
 
-# 🔹 Étape 7 : Entraîner le modèle
-history = model.fit(X_train, y_train, epochs=5, batch_size=128, validation_split=0.2)
+        if confidence_display:
+            st.info(f"🔎 Confiance du modèle : {prediction*100:.2f} %")
 
-# 🔹 Étape 8 : Évaluer le modèle
-y_pred_prob = model.predict(X_test)
-y_pred = (y_pred_prob > 0.5).astype("int32")
+# Footer
+st.markdown("---")
+st.markdown("© 2025 - Projet IA de détection des fake news | Propulsé par BERT & Streamlit 🚀")
 
-print("\nClassification Report:")
-print(classification_report(y_test, y_pred))
-
-# 🔹 Étape 9 : Graphes Accuracy & Loss
-plt.figure(figsize=(14, 5))
-
-plt.subplot(1, 2, 1)
-plt.plot(history.history['accuracy'], label='Train Accuracy')
-plt.plot(history.history['val_accuracy'], label='Val Accuracy')
-plt.title('Model Accuracy')
-plt.xlabel('Epoch')
-plt.ylabel('Accuracy')
-plt.legend()
-
-plt.subplot(1, 2, 2)
-plt.plot(history.history['loss'], label='Train Loss')
-plt.plot(history.history['val_loss'], label='Val Loss')
-plt.title('Model Loss')
-plt.xlabel('Epoch')
-plt.ylabel('Loss')
-plt.legend()
-
-plt.tight_layout()
-plt.show()
-
-# 🔹 Étape 10 : Matrice de confusion
-cm = confusion_matrix(y_test, y_pred)
-plt.figure(figsize=(6, 5))
-sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', xticklabels=['Fake', 'Real'], yticklabels=['Fake', 'Real'])
-plt.title('Confusion Matrix')
-plt.xlabel('Predicted')
-plt.ylabel('Actual')
-plt.show()
-
-# 🔹 Étape 11 : Sauvegarder le modèle et le tokenizer
-model.save("news_classifier_model.h5")
-print("✅ Modèle sauvegardé sous news_classifier_model.h5")
-
-import pickle
-with open("tokenizer.pkl", "wb") as f:
-    pickle.dump(tokenizer, f)
-print("✅ Tokenizer sauvegardé sous tokenizer.pkl")
-
-# 🔹 Étape 12 : Télécharger les fichiers vers votre machine
-from google.colab import files
-files.download("news_classifier_model.h5")
-files.download("tokenizer.pkl")
