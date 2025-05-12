@@ -55,7 +55,11 @@ def summarize_text(text):
         }
     except Exception as e:
         st.warning("⚠️ Text summary failed. Tokenizer error occurred.")
-        return None
+        return {
+            "Word Count": 0,
+            "Sentence Count": 0,
+            "Character Count": 0
+        }
 
 def predict_label(text):
     """Predicts whether the input is fake or real news."""
@@ -90,9 +94,8 @@ else:
 if user_input:
     # Text statistics
     stats = summarize_text(user_input)
-    if stats:
-        st.subheader("📊 Text Summary")
-        st.write(stats)
+    st.subheader("📊 Text Summary")
+    st.write(stats)
 
     # Prediction
     st.subheader("🧠 Prediction")
@@ -119,3 +122,4 @@ if user_input:
 # Footer
 st.markdown("---")
 st.caption("© 2025 - AI Fake News Detection Project | Made with ❤️ using Streamlit and TensorFlow")
+
