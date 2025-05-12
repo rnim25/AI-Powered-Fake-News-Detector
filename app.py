@@ -6,11 +6,7 @@ from tensorflow.keras.preprocessing.sequence import pad_sequences
 from PIL import Image
 import matplotlib.pyplot as plt
 from langdetect import detect
-import nltk
-from nltk.tokenize import word_tokenize, sent_tokenize
-
-# Download NLTK tokenizer model
-nltk.download('punkt')
+import re
 
 # ------------------------------
 # App Configuration
@@ -33,22 +29,25 @@ def load_tokenizer():
 
 model = load_model()
 tokenizer = load_tokenizer()
-max_length = 300  # Ensure this matches what was used during training
+max_length = 300  # Should match the training setting
 
 # ------------------------------
 # Utility Functions
 # ------------------------------
 def clean_text(text):
     """Remove URLs and special characters, and convert to lowercase."""
-    import re
     text = re.sub(r"http\S+", "", text)  # Remove URLs
     text = re.sub(r"[^a-zA-Z\s]", "", text)  # Remove special characters
     return text.lower()
 
 def summarize_text(text):
     """Returns text statistics such as word and sentence counts."""
+    import nltk
+    nltk.download('punkt', quiet=True)  # Download inside function to avoid LookupError
+    from nltk.tokenize import word_tokenize, sent_tokenize
+
     words = word_tokenize(text)
-    sentences = sent_tokenize(text, language='english')  # Force English language
+    sentences = sent_tokenize(text, language='english')
     return {
         "Word Count": len(words),
         "Sentence Count": len(sentences),
