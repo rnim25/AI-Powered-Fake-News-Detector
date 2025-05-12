@@ -1,8 +1,8 @@
 streamlit
 tensorflow
-kaggle
-pandas
 numpy
+pandas
 scikit-learn
 matplotlib
 seaborn
+Pillow
