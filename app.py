@@ -5,6 +5,9 @@ import pickle
 from tensorflow.keras.preprocessing.sequence import pad_sequences
 from PIL import Image
 
+# 🧠 Cette ligne doit être juste après les imports
+st.set_page_config(page_title="📰 Fake News Detector", page_icon="🧠", layout="wide")
+
 # Chargement du modèle et du tokenizer
 @st.cache_resource
 def load_model_and_tokenizer():
@@ -20,7 +23,6 @@ vocab_size = 10000
 max_length = 300
 
 # Interface Streamlit
-st.set_page_config(page_title="📰 Fake News Detector", page_icon="🧠", layout="wide")
 st.title("📰 Fake News Detector - AI Powered")
 st.markdown("""
 Bienvenue dans l'application de détection automatique des **fake news** 🧠📢.  
@@ -51,4 +53,5 @@ if st.button("🔍 Analyser la News"):
 # Footer
 st.markdown("---")
 st.markdown("© 2025 - Projet IA de détection des fake news | Propulsé par BERT & Streamlit 🚀")
+
 
