@@ -9,8 +9,7 @@ from langdetect import detect
 import nltk
 from nltk.tokenize import word_tokenize, sent_tokenize
 
-# Download NLTK data (only if not already available)
-nltk.download('punkt', quiet=True)
+nltk.download('punkt')
 
 # ------------------------------
 # App Configuration
@@ -45,22 +44,13 @@ def clean_text(text):
 
 def summarize_text(text):
     """Returns basic statistics about the input text."""
-    try:
-        # Simple word and sentence counting without using NLTK tokenizer
-        words = text.split()  # Splitting text into words
-        sentences = text.split('.')  # Splitting text into sentences using periods
-        return {
-            "Word Count": len(words),
-            "Sentence Count": len(sentences),
-            "Character Count": len(text)
-        }
-    except Exception as e:
-        st.warning(f"⚠️ Text summary failed: {e}")
-        return {
-            "Word Count": 0,
-            "Sentence Count": 0,
-            "Character Count": 0
-        }
+    words = word_tokenize(text)
+    sentences = sent_tokenize(text)
+    return {
+        "Word Count": len(words),
+        "Sentence Count": len(sentences),
+        "Character Count": len(text)
+    }
 
 def predict_label(text):
     """Predicts whether the input is fake or real news."""
@@ -93,6 +83,13 @@ else:
     user_input = st.text_area("✏️ Enter news article text here:", height=200)
 
 if user_input:
+    # Language detection
+    try:
+        lang = detect(user_input)
+        st.info(f"🌍 Detected Language: {lang.upper()}")
+    except:
+        st.warning("Language detection failed.")
+
     # Text statistics
     stats = summarize_text(user_input)
     st.subheader("📊 Text Summary")
@@ -123,4 +120,3 @@ if user_input:
 # Footer
 st.markdown("---")
 st.caption("© 2025 - AI Fake News Detection Project | Made with ❤️ using Streamlit and TensorFlow")
-
