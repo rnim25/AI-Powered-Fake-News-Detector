@@ -6,11 +6,7 @@ from tensorflow.keras.preprocessing.sequence import pad_sequences
 from PIL import Image
 import matplotlib.pyplot as plt
 from langdetect import detect
-import nltk
-from nltk.tokenize import word_tokenize, sent_tokenize
-
-# Download NLTK resources if not already downloaded
-nltk.download('punkt')
+import re
 
 # ------------------------------
 # App Configuration
@@ -38,15 +34,14 @@ max_length = 300  # Ensure this matches what you used during training
 # ------------------------------
 def clean_text(text):
     """Basic cleanup: remove special characters and URLs."""
-    import re
     text = re.sub(r"http\S+", "", text)  # Remove URLs
     text = re.sub(r"[^a-zA-Z\s]", "", text)  # Remove special characters
     return text.lower()
 
 def summarize_text(text):
     """Returns basic statistics about the input text."""
-    words = word_tokenize(text)
-    sentences = sent_tokenize(text)
+    words = text.split()
+    sentences = text.split(".")
     return {
         "Word Count": len(words),
         "Sentence Count": len(sentences),
