@@ -44,17 +44,18 @@ def clean_text(text):
     return text.lower()
 
 def summarize_text(text):
-    """Return word count, sentence count, and character count with fixed English tokenization."""
+    """Returns basic statistics about the input text."""
     try:
-        words = word_tokenize(text, language='english')
-        sentences = sent_tokenize(text, language='english')
+        # Simple word and sentence counting without using NLTK tokenizer
+        words = text.split()  # Splitting text into words
+        sentences = text.split('.')  # Splitting text into sentences using periods
         return {
             "Word Count": len(words),
             "Sentence Count": len(sentences),
             "Character Count": len(text)
         }
     except Exception as e:
-        st.warning("⚠️ Text summary failed. Tokenizer error occurred.")
+        st.warning(f"⚠️ Text summary failed: {e}")
         return {
             "Word Count": 0,
             "Sentence Count": 0,
