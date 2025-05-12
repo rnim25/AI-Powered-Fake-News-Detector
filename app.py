@@ -24,7 +24,11 @@ os.environ["KAGGLE_USERNAME"] = kaggle_creds["username"]
 os.environ["KAGGLE_KEY"] = kaggle_creds["key"]
 
 # 🔹 Étape 2 : Installer l'outil Kaggle CLI et télécharger le dataset
-!pip install -q kaggle
+import subprocess
+import sys
+
+subprocess.check_call([sys.executable, "-m", "pip", "install", "kaggle"])
+
 !kaggle datasets download -d clmentbisaillon/fake-and-real-news-dataset
 
 # 🔹 Étape 3 : Extraire le dataset ZIP
