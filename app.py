@@ -6,7 +6,9 @@ from tensorflow.keras.preprocessing.sequence import pad_sequences
 from PIL import Image
 import matplotlib.pyplot as plt
 from langdetect import detect
+import nltk
 import re
+import pandas as pd
 
 # ------------------------------
 # App Configuration
@@ -18,18 +20,16 @@ st.set_page_config(page_title="Fake News Detector", page_icon="📰", layout="ce
 # ------------------------------
 @st.cache_resource
 def load_model():
-    model = tf.keras.models.load_model("news_classifier_model.h5")
-    return model
+    return tf.keras.models.load_model("news_classifier_model.h5")
 
 @st.cache_resource
 def load_tokenizer():
     with open("tokenizer.pkl", "rb") as f:
-        tokenizer = pickle.load(f)
-    return tokenizer
+        return pickle.load(f)
 
 model = load_model()
 tokenizer = load_tokenizer()
-max_length = 300  # Should match the training setting
+max_length = 300
 
 # ------------------------------
 # Utility Functions
@@ -42,17 +42,23 @@ def clean_text(text):
 
 def summarize_text(text):
     """Returns text statistics such as word and sentence counts."""
-    import nltk
-    nltk.download('punkt', quiet=True)  # Download inside function to avoid LookupError
+    nltk.download('punkt', quiet=True)
     from nltk.tokenize import word_tokenize, sent_tokenize
-
-    words = word_tokenize(text)
-    sentences = sent_tokenize(text, language='english')
-    return {
-        "Word Count": len(words),
-        "Sentence Count": len(sentences),
-        "Character Count": len(text)
-    }
+    try:
+        words = word_tokenize(text)
+        sentences = sent_tokenize(text, language='english')  # Force English language
+        return {
+            "Word Count": len(words),
+            "Sentence Count": len(sentences),
+            "Character Count": len(text)
+        }
+    except Exception as e:
+        return {
+            "Word Count": 0,
+            "Sentence Count": 0,
+            "Character Count": len(text),
+            "Error": str(e)
+        }
 
 def predict_label(text):
     """Predicts whether the input is fake or real news."""
@@ -63,12 +69,12 @@ def predict_label(text):
     return prediction[0][0]
 
 # ------------------------------
-# App Interface
+# App UI
 # ------------------------------
 st.title("📰 Fake News Detection App")
-st.write("This app uses a trained LSTM model to classify news content as **Fake** or **Real**.")
+st.write("This application uses a trained LSTM model to classify news articles as **Fake** or **Real**.")
 
-# File uploader
+# File upload section
 uploaded_file = st.file_uploader("📁 Upload a .txt or .csv file (optional)", type=["txt", "csv"])
 user_input = ""
 
@@ -77,28 +83,27 @@ if uploaded_file is not None:
         user_input = uploaded_file.read().decode("utf-8")
         st.text_area("Text from file:", user_input, height=200)
     elif uploaded_file.type == "text/csv":
-        import pandas as pd
         df = pd.read_csv(uploaded_file)
         st.dataframe(df.head())
-        st.warning("CSV preview only. Please enter a text sample for prediction.")
+        st.warning("CSV files are shown for inspection only. Use text input for prediction.")
 else:
     user_input = st.text_area("✏️ Enter a news article:", height=200)
 
-# Main Prediction Section
+# Prediction section
 if user_input:
     try:
         lang = detect(user_input)
         st.info(f"🌍 Detected Language: {lang.upper()}")
     except:
-        st.warning("Could not detect language.")
+        st.warning("Language detection failed.")
 
-    # Display text summary
+    # Text summary
     st.subheader("📊 Text Summary")
-    try:
-        stats = summarize_text(user_input)
-        st.write(stats)
-    except Exception as e:
+    stats = summarize_text(user_input)
+    if "Error" in stats:
         st.error("Text summary failed. Please ensure the text is in English.")
+    else:
+        st.write(stats)
 
     # Prediction
     st.subheader("🧠 Prediction")
@@ -106,9 +111,10 @@ if user_input:
     label = "Real" if probability > 0.5 else "Fake"
     st.markdown(f"### 🏷️ **Prediction: {label.upper()}**")
 
-    # Confidence bar
+    # Confidence display
     st.subheader("📈 Model Confidence")
-    st.progress(float(probability) if probability > 0.5 else 1 - float(probability))
+    confidence = float(probability) if probability > 0.5 else 1 - float(probability)
+    st.progress(confidence)
 
     # Pie chart
     fig, ax = plt.subplots()
@@ -124,4 +130,5 @@ if user_input:
 
 # Footer
 st.markdown("---")
-st.caption("© 2025 - AI Fake News Detection Project | Powered by Streamlit & TensorFlow")
+st.caption("© 2025 - AI Fake News Detection Project | Made with ❤️ using Streamlit and TensorFlow")
+
