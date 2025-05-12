@@ -52,5 +52,4 @@ if st.button("🔍 Analyser la News"):
 st.markdown("---")
 st.markdown("© 2025 - Projet IA de détection des fake news | Propulsé par BERT & Streamlit 🚀")
 
-pip install streamlit tensorflow
 streamlit run app.py
