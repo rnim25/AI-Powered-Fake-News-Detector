@@ -8,6 +8,8 @@ import matplotlib.pyplot as plt
 from langdetect import detect
 import nltk
 from nltk.tokenize import word_tokenize, sent_tokenize
+import pandas as pd
+import re
 
 nltk.download('punkt')
 
@@ -16,7 +18,9 @@ nltk.download('punkt')
 # ------------------------------
 st.set_page_config(page_title="Fake News Detector", page_icon="📰", layout="centered")
 
-# Load model and tokenizer
+# ------------------------------
+# Load Model and Tokenizer
+# ------------------------------
 @st.cache_resource
 def load_model():
     model = tf.keras.models.load_model("news_classifier_model.h5")
@@ -30,20 +34,19 @@ def load_tokenizer():
 
 model = load_model()
 tokenizer = load_tokenizer()
-max_length = 300  # Ensure this matches what you used during training
+max_length = 300  # Must match what was used during training
 
 # ------------------------------
 # Utility Functions
 # ------------------------------
 def clean_text(text):
-    """Basic cleanup: remove special characters and URLs."""
-    import re
+    """Remove URLs, special characters, and convert text to lowercase."""
     text = re.sub(r"http\S+", "", text)  # Remove URLs
     text = re.sub(r"[^a-zA-Z\s]", "", text)  # Remove special characters
     return text.lower()
 
 def summarize_text(text):
-    """Returns basic statistics about the input text."""
+    """Return basic statistics of the text."""
     words = word_tokenize(text)
     sentences = sent_tokenize(text)
     return {
@@ -53,7 +56,7 @@ def summarize_text(text):
     }
 
 def predict_label(text):
-    """Predicts whether the input is fake or real news."""
+    """Predict whether the input text is real or fake news."""
     cleaned = clean_text(text)
     sequence = tokenizer.texts_to_sequences([cleaned])
     padded = pad_sequences(sequence, maxlen=max_length, padding='post', truncating='post')
@@ -66,7 +69,7 @@ def predict_label(text):
 st.title("📰 Fake News Detection App")
 st.write("This application uses a trained LSTM model to classify news articles as **Fake** or **Real**.")
 
-# File upload
+# Upload file or enter text
 uploaded_file = st.file_uploader("📁 Upload a .txt or .csv file (optional)", type=["txt", "csv"])
 user_input = ""
 
@@ -75,13 +78,15 @@ if uploaded_file is not None:
         user_input = uploaded_file.read().decode("utf-8")
         st.text_area("Text from file:", user_input, height=200)
     elif uploaded_file.type == "text/csv":
-        import pandas as pd
         df = pd.read_csv(uploaded_file)
         st.dataframe(df.head())
         st.warning("CSV files are shown for inspection only. Use text input for prediction.")
 else:
     user_input = st.text_area("✏️ Enter news article text here:", height=200)
 
+# ------------------------------
+# Prediction
+# ------------------------------
 if user_input:
     # Language detection
     try:
@@ -90,22 +95,22 @@ if user_input:
     except:
         st.warning("Language detection failed.")
 
-    # Text statistics
+    # Text summary
     stats = summarize_text(user_input)
     st.subheader("📊 Text Summary")
     st.write(stats)
 
-    # Prediction
+    # Prediction result
     st.subheader("🧠 Prediction")
     probability = predict_label(user_input)
     label = "Real" if probability > 0.5 else "Fake"
     st.markdown(f"### 🏷️ **Prediction: {label.upper()}**")
 
-    # Confidence gauge
+    # Confidence progress bar
     st.subheader("📈 Model Confidence")
     st.progress(float(probability) if probability > 0.5 else 1 - float(probability))
 
-    # Pie chart
+    # Confidence pie chart
     fig, ax = plt.subplots()
     ax.pie(
         [probability, 1 - probability],
@@ -117,6 +122,9 @@ if user_input:
     ax.axis("equal")
     st.pyplot(fig)
 
+# ------------------------------
 # Footer
+# ------------------------------
 st.markdown("---")
-st.caption("Made with ❤️ using Streamlit and TensorFlow")
+st.caption("© 2025 - AI Fake News Detection Project | Made with ❤️ using Streamlit and TensorFlow")
+
